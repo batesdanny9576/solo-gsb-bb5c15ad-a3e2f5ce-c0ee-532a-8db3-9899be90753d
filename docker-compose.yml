@@ -1,0 +1,26 @@
+services:
+  api:
+    build: .
+    image: soundscape-clustering-api:latest
+    container_name: soundscape-api
+    ports:
+      - "8000:8000"
+    environment:
+      # SQLite 持久化文件位于容器卷内
+      DATABASE_URL: sqlite:////data/soundscape.db
+      # 位置网格边长（度），0.001 ≈ 111m
+      GRID_SIZE_DEG: "0.001"
+      # 时间相邻阈值（秒）：重叠或间隙小于该值即归并
+      MERGE_GAP_SECONDS: "300"
+    volumes:
+      - soundscape-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).status==200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  soundscape-data:
